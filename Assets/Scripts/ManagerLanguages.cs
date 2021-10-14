@@ -9,14 +9,14 @@ public class ManagerLanguages : MonoBehaviour
 
     private Dictionary<string, string> EN = new Dictionary<string, string>
     {
-        {"Play", "Play" },
-        {"Quit", "Quit" }
+        {"Match", "Match" },
+        {"Start", "Start" }
     };
 
     private Dictionary<string, string> PT = new Dictionary<string, string>
     {
-        {"Play", "Jogar" },
-        {"Quit", "Desistir" }
+        {"Match", "Jogo" },
+        {"Start", "Começar" }
     };
 
     private void Awake()
