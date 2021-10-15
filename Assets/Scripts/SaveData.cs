@@ -1,19 +1,60 @@
 using UnityEngine;
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Runtime.Serialization.Formatters.Binary;
 
-public class ManagerSaveData : MonoBehaviour
+public class SaveData : MonoBehaviour
 {
-    public static ManagerSaveData MSD;
+    public static SaveData SD;
 
+    [HideInInspector]
+    public List<Match> matches;
     [HideInInspector]
     public Settings settings;
 
     private void Awake()
     {
-        MSD = this;
+        SD = this;
+        LoadMatches();
         LoadSettings();
+    }
+
+    public void SaveMatch(Match _m)
+    {
+        matches.Add(_m);
+        SaveMatches();
+    }
+
+    public void SaveMatches()
+    {
+        BinaryFormatter bf = new BinaryFormatter();
+        FileStream file = File.Create(Application.persistentDataPath + "/Matches.as");
+        Matches data = new Matches
+        {
+            matches = new List<Match>(matches)
+        };
+
+        bf.Serialize(file, data);
+        file.Close();
+    }
+
+    public void LoadMatches()
+    {
+        if (File.Exists(Application.persistentDataPath + "/Matches.as"))
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            FileStream file = File.Open(Application.persistentDataPath + "/Matches.as", FileMode.Open);
+            Matches data = (Matches)bf.Deserialize(file);
+            file.Close();
+
+            matches = new List<Match>(data.matches);
+        }
+        else
+        {
+            matches = new List<Match>();
+            SaveMatches();
+        }
     }
 
     public void SaveSettings()
@@ -55,6 +96,12 @@ public class ManagerSaveData : MonoBehaviour
             SaveSettings();
         }
     }
+}
+
+[Serializable]
+public class Matches
+{
+    public List<Match> matches;
 }
 
 [Serializable]

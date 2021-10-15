@@ -4,13 +4,24 @@ using TMPro;
 
 public class MenuMain : MonoBehaviour
 {
-    public TextMeshProUGUI textMatch;
+    public TextMeshProUGUI textPlay;
+    public TextMeshProUGUI textMatches;
     public Image imageFlag;
     public Sprite[] spritesFlag;
 
     private void Start()
     {
         Language();
+    }
+
+    public void ButtonPlay()
+    {
+        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.menuPlay);
+    }
+
+    public void ButtonMatches()
+    {
+        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.menuMatches);
     }
 
     public void ButtonFlag()
@@ -21,7 +32,8 @@ public class MenuMain : MonoBehaviour
 
     private void Language()
     {
-        textMatch.text = ManagerLanguages.ML.Translate("Match");
-        imageFlag.sprite = spritesFlag[(int)ManagerSaveData.MSD.settings.language];
+        textPlay.text = ManagerLanguages.ML.Translate("Play");
+        textMatches.text = ManagerLanguages.ML.Translate("Matches");
+        imageFlag.sprite = spritesFlag[(int)SaveData.SD.settings.language];
     }
 }

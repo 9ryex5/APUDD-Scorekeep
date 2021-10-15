@@ -9,14 +9,40 @@ public class ManagerLanguages : MonoBehaviour
 
     private Dictionary<string, string> EN = new Dictionary<string, string>
     {
-        {"Match", "Match" },
-        {"Start", "Start" }
+        {"Play", "Play" },
+        {"Matches", "Matches"},
+        {"Import", "Import"},
+        {"Start", "Start" },
+        {"Undo", "Undo" },
+        {"Timeout", "Timeout"},
+        {"CalledBy", "Called By"},
+        {"SpiritTimeout", "Spirit Timeout" },
+        {"End", "End" },
+        {"Point", "Point" },
+        {"Assistance", "Assistance" },
+        {"Defense", "Defense" },
+        {"Callahan", "Callahan"},
+        {"WhoPoint", "Who Scored?" },
+        {"WhoAssist", "Who Assisted?" }
     };
 
     private Dictionary<string, string> PT = new Dictionary<string, string>
     {
-        {"Match", "Jogo" },
-        {"Start", "Começar" }
+        {"Play", "Jogar" },
+        {"Matches", "Partidas"},
+        {"Import", "Importar"},
+        {"Start", "Começar" },
+        {"Undo", "Anular" },
+        {"Timeout", "Timeout"},
+        {"CalledBy", "Chamado Por"},
+        {"SpiritTimeout", "Timeout de Espírito" },
+        {"End", "Terminar" },
+        {"Point", "Ponto" },
+        {"Assistance", "Assistência" },
+        {"Defense", "Defesa" },
+        {"Callahan", "Callahan"},
+        {"WhoPoint", "Quem Pontuou?" },
+        {"WhoAssist", "Quem Assistiu?" }
     };
 
     private void Awake()
@@ -32,21 +58,25 @@ public class ManagerLanguages : MonoBehaviour
     public string Translate(string _key)
     {
         currentDictionary.TryGetValue(_key, out string temp);
-        if (temp == null) return _key;
+        if (temp == null)
+        {
+            Debug.LogWarning("Translation not found");
+            return _key;
+        }
         return temp;
     }
 
     public void NextLanguage()
     {
-        ManagerSaveData.MSD.settings.language++;
-        if ((int)ManagerSaveData.MSD.settings.language >= System.Enum.GetValues(typeof(Language)).Length) ManagerSaveData.MSD.settings.language = 0;
+        SaveData.SD.settings.language++;
+        if ((int)SaveData.SD.settings.language >= System.Enum.GetValues(typeof(Language)).Length) SaveData.SD.settings.language = 0;
         UpdateDictionary();
-        ManagerSaveData.MSD.SaveSettings();
+        SaveData.SD.SaveSettings();
     }
 
     private void UpdateDictionary()
     {
-        switch (ManagerSaveData.MSD.settings.language)
+        switch (SaveData.SD.settings.language)
         {
             case Language.EN:
                 currentDictionary = EN;
