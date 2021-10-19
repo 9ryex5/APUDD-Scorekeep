@@ -39,7 +39,7 @@ public class MenuMatches : MonoBehaviour
         for (int i = 0; i < parentMatchEvents.childCount; i++)
             Destroy(parentMatchEvents.GetChild(i).gameObject);
 
-        for (int i = 0; i < SaveData.SD.matches.Count; i++)
+        for (int i = 0; i < _m.events.Count; i++)
         {
             ItemMatchEvent ime = Instantiate(prefabMatchEvent, parentMatchEvents);
             ime.StartThis(_m.events[i]);

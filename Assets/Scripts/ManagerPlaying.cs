@@ -15,11 +15,9 @@ public class ManagerPlaying : MonoBehaviour
     private DateTime startTime;
     private TimeSpan stoppedTime;
     private DateTime startStoppage;
-    private int scoreA, scoreB;
 
     public TextMeshProUGUI textTeamA, textTeamB;
     public Transform parentA, parentB;
-    private Team teamA, teamB;
     public ItemPlayer prefabItemPlayer;
     private List<ItemPlayer> itemsPlayer;
 
@@ -39,6 +37,10 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textButtonSpiritTimeout;
     public Button buttonEnd;
     public TextMeshProUGUI textButtonEnd;
+
+    //Info
+    public TextMeshProUGUI textLabelHalfTime, textLabelFullTime;
+    public TextMeshProUGUI textHalfTime, textFullTime;
 
     //Undo
     public TextMeshProUGUI textUndoTitle;
@@ -70,7 +72,7 @@ public class ManagerPlaying : MonoBehaviour
     private TimeSpan gameTime;
     private bool isPoint;
     private bool isAssist;
-
+    private int debugCount;
     private void Awake()
     {
         MP = this;
@@ -84,21 +86,20 @@ public class ManagerPlaying : MonoBehaviour
         textTimer.text = gameTime.Hours.ToString("00") + ":" + gameTime.Minutes.ToString("00") + ":" + gameTime.Seconds.ToString("00");
     }
 
-    public void StartMatch(Team _teamA, Team _teamB)
+    public void StartMatch(Match _m)
     {
+        match = _m;
         matchStarted = false;
         timeIsRunning = false;
         textTimer.text = "00:00:00";
         UpdateScore();
-        teamA = _teamA;
-        teamB = _teamB;
+        UpdateInfo();
         SetTeams();
         buttonStartTime.gameObject.SetActive(true);
         buttonOptions.interactable = false;
         buttonUndo.interactable = false;
         buttonEnd.interactable = false;
         Language();
-        match = new Match(teamA, teamB);
     }
 
     private void SetTeams()
@@ -109,26 +110,31 @@ public class ManagerPlaying : MonoBehaviour
         for (int i = 0; i < parentB.childCount; i++)
             Destroy(parentB.GetChild(i).gameObject);
 
-        textTeamA.text = teamA.myName;
-        textTeamB.text = teamB.myName;
-        textTimeoutTeamA.text = teamA.myName;
-        textTimeoutTeamB.text = teamB.myName;
+        textTeamA.text = match.teamA.myName;
+        textTeamB.text = match.teamB.myName;
+        textTimeoutTeamA.text = match.teamA.myName;
+        textTimeoutTeamB.text = match.teamB.myName;
 
         itemsPlayer = new List<ItemPlayer>();
 
-        for (int i = 0; i < teamA.players.Count; i++)
+        for (int i = 0; i < match.teamA.players.Count; i++)
         {
             ItemPlayer ip = Instantiate(prefabItemPlayer, parentA);
-            ip.StartThis(teamA.players[i], true);
+            ip.StartThis(match.teamA.players[i], true);
             itemsPlayer.Add(ip);
         }
 
-        for (int i = 0; i < teamB.players.Count; i++)
+        for (int i = 0; i < match.teamB.players.Count; i++)
         {
             ItemPlayer ip = Instantiate(prefabItemPlayer, parentB);
-            ip.StartThis(teamB.players[i], false);
+            ip.StartThis(match.teamB.players[i], false);
             itemsPlayer.Add(ip);
         }
+    }
+
+    public void ButtonInfo()
+    {
+        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingInfo);
     }
 
     public void ButtonStartTime()
@@ -175,21 +181,21 @@ public class ManagerPlaying : MonoBehaviour
         {
             case MatchEventType.POINT:
                 textEventPointType.text = ManagerLanguages.ML.Translate("Point");
-                textEventPointPlayer.text = PlayerIdentification(match.events.Last().eventPlayer);
+                textEventPointPlayer.text = PlayerIdentification(match.events.Last().playerMain);
                 textEventAssistType.text = ManagerLanguages.ML.Translate("Assistance");
                 textEventAssistPlayer.text = PlayerIdentification(match.events.Last().playerAssist);
                 break;
             case MatchEventType.DEFENSE:
                 textEventType.text = ManagerLanguages.ML.Translate("Defense");
-                textEventPlayer.text = PlayerIdentification(match.events.Last().eventPlayer);
+                textEventPlayer.text = PlayerIdentification(match.events.Last().playerMain);
                 break;
             case MatchEventType.CALLAHAN:
                 textEventType.text = "Callahan";
-                textEventPlayer.text = PlayerIdentification(match.events.Last().eventPlayer);
+                textEventPlayer.text = PlayerIdentification(match.events.Last().playerMain);
                 break;
             case MatchEventType.TIMEOUT:
                 textEventType.text = "Timeout";
-                textEventPlayer.text = match.events.Last().teamA ? teamA.myName : teamB.myName;
+                textEventPlayer.text = match.events.Last().teamA ? match.teamA.myName : match.teamB.myName;
                 break;
         }
 
@@ -198,14 +204,8 @@ public class ManagerPlaying : MonoBehaviour
 
     public void ButtonConfirmUndo()
     {
-        if (match.events.Last().eventType == MatchEventType.POINT || match.events.Last().eventType == MatchEventType.CALLAHAN)
-        {
-            if (match.events.Last().teamA) scoreA--;
-            else scoreB--;
-            UpdateScore();
-        }
-
         match.events.RemoveAt(match.events.Count - 1);
+        UpdateScore();
         if (match.events.Count == 0) buttonUndo.interactable = false;
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
     }
@@ -289,20 +289,20 @@ public class ManagerPlaying : MonoBehaviour
 
         if (currentItemPlayer.GetTeamA())
         {
-            for (int i = 0; i < teamA.players.Count; i++)
+            for (int i = 0; i < match.teamA.players.Count; i++)
             {
-                if (currentItemPlayer.GetPlayer().ID == teamA.players[i].ID) continue;
+                if (currentItemPlayer.GetPlayer().ID == match.teamA.players[i].ID) continue;
                 ItemPlayer ip = Instantiate(prefabItemPlayer, parentPointPlayers);
-                ip.StartThis(teamA.players[i], true);
+                ip.StartThis(match.teamA.players[i], true);
             }
         }
         else
         {
-            for (int i = 0; i < teamB.players.Count; i++)
+            for (int i = 0; i < match.teamB.players.Count; i++)
             {
-                if (currentItemPlayer.GetPlayer().ID == teamB.players[i].ID) continue;
+                if (currentItemPlayer.GetPlayer().ID == match.teamB.players[i].ID) continue;
                 ItemPlayer ip = Instantiate(prefabItemPlayer, parentPointPlayers);
-                ip.StartThis(teamB.players[i], false);
+                ip.StartThis(match.teamB.players[i], false);
             }
         }
     }
@@ -323,20 +323,14 @@ public class ManagerPlaying : MonoBehaviour
     {
         match.events.Add(new MatchEvent()
         {
-            time = gameTime,
+            gameTime = gameTime,
             eventType = met,
             teamA = currentItemPlayer.GetTeamA(),
-            eventPlayer = currentItemPlayer.GetPlayer(),
+            playerMain = currentItemPlayer.GetPlayer(),
             playerAssist = assist
         });
 
-        if (met == MatchEventType.POINT || met == MatchEventType.CALLAHAN)
-        {
-            if (currentItemPlayer.GetTeamA()) scoreA++;
-            else scoreB++;
-            UpdateScore();
-        }
-
+        if (met == MatchEventType.POINT || met == MatchEventType.CALLAHAN) UpdateScore();
         buttonUndo.interactable = true;
     }
 
@@ -344,10 +338,10 @@ public class ManagerPlaying : MonoBehaviour
     {
         match.events.Add(new MatchEvent()
         {
-            time = gameTime,
+            gameTime = gameTime,
             eventType = MatchEventType.TIMEOUT,
             teamA = _teamA,
-            eventPlayer = new Player(),
+            playerMain = new Player(),
             playerAssist = new Player()
         });
 
@@ -356,8 +350,16 @@ public class ManagerPlaying : MonoBehaviour
 
     private void UpdateScore()
     {
-        textScore.text = scoreA + "-" + scoreB;
-        buttonEnd.interactable = scoreA != scoreB;
+        int a = match.GetScore(true);
+        int b = match.GetScore(false);
+        textScore.text = a + "-" + b;
+        buttonEnd.interactable = a != b;
+    }
+
+    private void UpdateInfo()
+    {
+        textHalfTime.text = match.halfTime.Hours.ToString("00") + ":" + match.halfTime.Minutes.ToString("00") + ":" + match.halfTime.Seconds.ToString("00");
+        textFullTime.text = match.fullTime.Hours.ToString("00") + ":" + match.fullTime.Minutes.ToString("00") + ":" + match.fullTime.Seconds.ToString("00");
     }
 
     private string PlayerIdentification(Player p)
@@ -367,6 +369,8 @@ public class ManagerPlaying : MonoBehaviour
 
     private void Language()
     {
+        textLabelHalfTime.text = ManagerLanguages.ML.Translate("Halftime");
+        textLabelFullTime.text = ManagerLanguages.ML.Translate("Fulltime");
         textButtonUndo.text = ManagerLanguages.ML.Translate("Undo");
         textButtonTimeout.text = ManagerLanguages.ML.Translate("Timeout");
         textCalledBy.text = ManagerLanguages.ML.Translate("CalledBy");

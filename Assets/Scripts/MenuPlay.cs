@@ -6,36 +6,44 @@ public class MenuPlay : MonoBehaviour
 {
     public TextMeshProUGUI textTitle;
     public TextMeshProUGUI textImport;
-    public Button buttonStart;
     public TextMeshProUGUI textStart;
 
+    public TextMeshProUGUI textDay;
+    public TextMeshProUGUI textHour;
     public TextMeshProUGUI textTeamA, textTeamB;
-    private Team teamA, teamB;
+    private Match match;
 
     private void OnEnable()
     {
+        textDay.text = string.Empty;
+        textHour.text = string.Empty;
         textTeamA.text = string.Empty;
         textTeamB.text = string.Empty;
-        buttonStart.interactable = false;
+        match = new Match();
         Language();
     }
 
     public void ButtonImportMatch()
     {
         Ultiorganizer ult = new Ultiorganizer();
-        Team[] teams = ult.ImportTeams();
-        teamA = teams[0];
-        teamB = teams[1];
-        textTeamA.text = teamA.myName;
-        textTeamB.text = teamB.myName;
+        match = ult.ImportMatch();
 
-        buttonStart.interactable = true;
+        textDay.text = match.date.Year + "/" + match.date.Month + "/" + match.date.Day;
+        textHour.text = match.date.Hour.ToString("00") + ":" + match.date.Minute.ToString("00");
+        textTeamA.text = match.teamA.myName;
+        textTeamB.text = match.teamB.myName;
     }
 
     public void ButtonStartMatch()
     {
+        if (match.date.Year == 1)
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("ImportMatch"));
+            return;
+        }
+
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
-        ManagerPlaying.MP.StartMatch(teamA, teamB);
+        ManagerPlaying.MP.StartMatch(match);
     }
 
     private void Language()

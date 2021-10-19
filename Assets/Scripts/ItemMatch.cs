@@ -3,14 +3,18 @@ using TMPro;
 
 public class ItemMatch : MonoBehaviour
 {
-    public TextMeshProUGUI myText;
+    public TextMeshProUGUI textDate;
+    public TextMeshProUGUI textScore;
+    public TextMeshProUGUI textTeams;
 
     private Match match;
 
     public void StartThis(Match _m)
     {
         match = _m;
-        myText.text = match.teamA.myName + " | " + match.teamB.myName;
+        textDate.text = match.date.Year + "/" + match.date.Month + "/" + match.date.Day;
+        textScore.text = match.GetScore(true) + " - " + match.GetScore(false);
+        textTeams.text = match.teamA.myName + " | " + match.teamB.myName;
     }
 
     public void Clicked()

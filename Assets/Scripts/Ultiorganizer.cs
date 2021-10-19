@@ -1,9 +1,15 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
 
 public class Ultiorganizer
 {
-    public Team[] ImportTeams()
+    public Match ImportMatch()
+    {
+        Team[] pickedTeams = PickTeams();
+        return new Match(DateTime.Now, new TimeSpan(0, 30, 0), new TimeSpan(1, 0, 0), pickedTeams[0], pickedTeams[1]);
+    }
+
+    private Team[] PickTeams()
     {
         Team[] allTeams = new Team[] {
         new Team{
@@ -57,12 +63,12 @@ public class Ultiorganizer
     };
 
         Team[] currentTeams = new Team[2];
-        int r1 = Random.Range(0, 4);
+        int r1 = UnityEngine.Random.Range(0, 4);
         int r2;
         currentTeams[0] = allTeams[r1];
         do
         {
-            r2 = Random.Range(0, 4);
+            r2 = UnityEngine.Random.Range(0, 4);
         } while (r1 == r2);
         currentTeams[1] = allTeams[r2];
 
