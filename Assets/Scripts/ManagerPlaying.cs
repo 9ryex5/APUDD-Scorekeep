@@ -23,22 +23,18 @@ public class ManagerPlaying : MonoBehaviour
 
     //Settings
     public Button buttonStartTime;
-    public Button buttonPlayersInfo;
-    public Button buttonOptions;
+    public Image buttonPlayersInfo;
     public Sprite[] spritesButtonPlayerInfo;
     private bool showingNames;
 
     //Options
-    public Button buttonUndo;
     public TextMeshProUGUI textButtonUndo;
-    public Button buttonTimeout;
     public TextMeshProUGUI textButtonTimeout;
-    public Button buttonSpiritTimeout;
     public TextMeshProUGUI textButtonSpiritTimeout;
-    public Button buttonEnd;
     public TextMeshProUGUI textButtonEnd;
 
     //Info
+    public TextMeshProUGUI textInfoTitle;
     public TextMeshProUGUI textLabelHalfTime, textLabelFullTime;
     public TextMeshProUGUI textHalfTime, textFullTime;
 
@@ -82,8 +78,7 @@ public class ManagerPlaying : MonoBehaviour
     {
         if (!timeIsRunning) return;
 
-        gameTime = (DateTime.Now - startTime) - stoppedTime;
-        textTimer.text = gameTime.Hours.ToString("00") + ":" + gameTime.Minutes.ToString("00") + ":" + gameTime.Seconds.ToString("00");
+        UpdateGameTime();
     }
 
     public void StartMatch(Match _m)
@@ -91,14 +86,12 @@ public class ManagerPlaying : MonoBehaviour
         match = _m;
         matchStarted = false;
         timeIsRunning = false;
-        textTimer.text = "00:00:00";
+        textTimer.text = "00:00";
         UpdateScore();
         UpdateInfo();
         SetTeams();
         buttonStartTime.gameObject.SetActive(true);
-        buttonOptions.interactable = false;
-        buttonUndo.interactable = false;
-        buttonEnd.interactable = false;
+        buttonPlayersInfo.sprite = spritesButtonPlayerInfo[0];
         Language();
     }
 
@@ -145,22 +138,17 @@ public class ManagerPlaying : MonoBehaviour
             matchStarted = true;
         }
         else
-        {
             stoppedTime += DateTime.Now - startStoppage;
-            buttonTimeout.interactable = true;
-            buttonSpiritTimeout.interactable = true;
-        }
 
         timeIsRunning = true;
         buttonStartTime.gameObject.SetActive(false);
-        buttonOptions.interactable = true;
     }
 
     public void ButtonPlayerInfo()
     {
         showingNames = !showingNames;
 
-        buttonPlayersInfo.GetComponent<Image>().sprite = spritesButtonPlayerInfo[showingNames ? 1 : 0];
+        buttonPlayersInfo.sprite = spritesButtonPlayerInfo[showingNames ? 1 : 0];
 
         foreach (ItemPlayer ip in itemsPlayer)
             ip.myText.text = showingNames ? ip.GetPlayer().myName : ip.GetPlayer().number.ToString();
@@ -168,6 +156,12 @@ public class ManagerPlaying : MonoBehaviour
 
     public void ButtonUndo()
     {
+        if (match.events.Count == 0)
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("NoEventsUndo"));
+            return;
+        }
+
         textEventPointType.text = string.Empty;
         textEventPointPlayer.text = string.Empty;
         textEventAssistType.text = string.Empty;
@@ -206,13 +200,15 @@ public class ManagerPlaying : MonoBehaviour
     {
         match.events.RemoveAt(match.events.Count - 1);
         UpdateScore();
-        if (match.events.Count == 0) buttonUndo.interactable = false;
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
     }
 
     public void ButtonTimeout()
     {
-        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingTimeout);
+        if (timeIsRunning)
+            ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingTimeout);
+        else
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("TimeNotRunning"));
     }
 
     public void ButtonConfirmTimeout(bool _teamA)
@@ -223,17 +219,28 @@ public class ManagerPlaying : MonoBehaviour
 
     public void ButtonSpiritTimeout()
     {
+        if (!timeIsRunning)
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("TimeNotRunning"));
+            return;
+        }
+
         startStoppage = DateTime.Now;
         timeIsRunning = false;
+        UpdateGameTime();
         buttonStartTime.gameObject.SetActive(true);
-        buttonTimeout.interactable = false;
-        buttonSpiritTimeout.interactable = false;
 
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
     }
 
     public void ButtonEnd()
     {
+        if (match.GetScore(true) == match.GetScore(false))
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("NoTie"));
+            return;
+        }
+
         SaveData.SD.SaveMatch(match);
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.menuPlay);
     }
@@ -319,6 +326,13 @@ public class ManagerPlaying : MonoBehaviour
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
     }
 
+    public void ButtonBackFromEvent()
+    {
+        isPoint = false;
+        isAssist = false;
+        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingEvent);
+    }
+
     private void AddMatchEvent(MatchEventType met, Player assist = new Player())
     {
         match.events.Add(new MatchEvent()
@@ -331,7 +345,6 @@ public class ManagerPlaying : MonoBehaviour
         });
 
         if (met == MatchEventType.POINT || met == MatchEventType.CALLAHAN) UpdateScore();
-        buttonUndo.interactable = true;
     }
 
     private void AddMatchTimeout(bool _teamA)
@@ -344,16 +357,17 @@ public class ManagerPlaying : MonoBehaviour
             playerMain = new Player(),
             playerAssist = new Player()
         });
+    }
 
-        buttonUndo.interactable = true;
+    private void UpdateGameTime()
+    {
+        gameTime = (DateTime.Now - startTime) - stoppedTime;
+        textTimer.text = (gameTime.Hours > 0 ? gameTime.Hours.ToString("00") + ":" : string.Empty) + gameTime.Minutes.ToString("00") + ":" + gameTime.Seconds.ToString("00");
     }
 
     private void UpdateScore()
     {
-        int a = match.GetScore(true);
-        int b = match.GetScore(false);
-        textScore.text = a + "-" + b;
-        buttonEnd.interactable = a != b;
+        textScore.text = match.GetScore(true) + "-" + match.GetScore(false);
     }
 
     private void UpdateInfo()
@@ -369,6 +383,7 @@ public class ManagerPlaying : MonoBehaviour
 
     private void Language()
     {
+        textInfoTitle.text = ManagerLanguages.ML.Translate("MatchInfo");
         textLabelHalfTime.text = ManagerLanguages.ML.Translate("Halftime");
         textLabelFullTime.text = ManagerLanguages.ML.Translate("Fulltime");
         textButtonUndo.text = ManagerLanguages.ML.Translate("Undo");

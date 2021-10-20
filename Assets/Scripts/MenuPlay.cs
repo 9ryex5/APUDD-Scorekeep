@@ -5,12 +5,12 @@ using TMPro;
 public class MenuPlay : MonoBehaviour
 {
     public TextMeshProUGUI textTitle;
-    public TextMeshProUGUI textImport;
     public TextMeshProUGUI textStart;
 
     public TextMeshProUGUI textDay;
     public TextMeshProUGUI textHour;
     public TextMeshProUGUI textTeamA, textTeamB;
+    public TextMeshProUGUI textX;
     private Match match;
 
     private void OnEnable()
@@ -19,6 +19,7 @@ public class MenuPlay : MonoBehaviour
         textHour.text = string.Empty;
         textTeamA.text = string.Empty;
         textTeamB.text = string.Empty;
+        textX.text = string.Empty;
         match = new Match();
         Language();
     }
@@ -32,6 +33,7 @@ public class MenuPlay : MonoBehaviour
         textHour.text = match.date.Hour.ToString("00") + ":" + match.date.Minute.ToString("00");
         textTeamA.text = match.teamA.myName;
         textTeamB.text = match.teamB.myName;
+        textX.text = "X";
     }
 
     public void ButtonStartMatch()
@@ -48,8 +50,7 @@ public class MenuPlay : MonoBehaviour
 
     private void Language()
     {
-        textTitle.text = ManagerLanguages.ML.Translate("Play");
-        textImport.text = ManagerLanguages.ML.Translate("Import");
+        textTitle.text = ManagerLanguages.ML.Translate("SettingMatch");
         textStart.text = ManagerLanguages.ML.Translate("Start");
     }
 }
