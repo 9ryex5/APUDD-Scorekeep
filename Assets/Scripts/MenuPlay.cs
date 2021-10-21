@@ -33,7 +33,7 @@ public class MenuPlay : MonoBehaviour
         textHour.text = match.date.Hour.ToString("00") + ":" + match.date.Minute.ToString("00");
         textTeamA.text = match.teamA.myName;
         textTeamB.text = match.teamB.myName;
-        textX.text = "X";
+        textX.text = "|";
     }
 
     public void ButtonStartMatch()

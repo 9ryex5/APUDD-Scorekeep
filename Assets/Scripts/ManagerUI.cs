@@ -13,6 +13,7 @@ public class ManagerUI : MonoBehaviour
     public GameObject playingOptions;
     public GameObject playingUndo;
     public GameObject playingTimeout;
+    public GameObject playingSpiritTimeout;
     public GameObject playingEventPoint;
     public GameObject playingEvent;
     public GameObject matchProfile;

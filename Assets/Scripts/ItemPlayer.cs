@@ -12,6 +12,7 @@ public class ItemPlayer : MonoBehaviour
     {
         player = p;
         myText.text = p.number.ToString();
+        FontSizeNumber();
         teamA = _teamA;
     }
 
@@ -28,5 +29,15 @@ public class ItemPlayer : MonoBehaviour
     public Player GetPlayer()
     {
         return player;
+    }
+
+    public void FontSizeName()
+    {
+        myText.fontSize = 18;
+    }
+
+    public void FontSizeNumber()
+    {
+        myText.fontSize = 55;
     }
 }

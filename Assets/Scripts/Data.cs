@@ -63,4 +63,5 @@ public enum MatchEventType
     DEFENSE,
     CALLAHAN,
     TIMEOUT,
+    SPIRIT_TIMEOUT
 }

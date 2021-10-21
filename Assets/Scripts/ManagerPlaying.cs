@@ -11,17 +11,32 @@ public class ManagerPlaying : MonoBehaviour
 
     public TextMeshProUGUI textTimer;
     public TextMeshProUGUI textScore;
+    public TextMeshProUGUI textTimerExtra;
 
+    private const int timeToPullYellow = 75;
+    private const int timeToPullRed = 90;
+
+    private Match match;
+    private bool matchStarted;
+    private bool timeIsRunning;
     private DateTime startTime;
+    private TimeSpan gameTime;
     private TimeSpan stoppedTime;
     private DateTime startStoppage;
+    private TimeSpan eventExactTime, possibleEventExactTime;
+    private bool timerExtra;
+    private bool warnedHalfTime, warnedFullTime;
+    private bool isPoint;
+    private bool isAssist;
 
+    //Teams
     public TextMeshProUGUI textTeamA, textTeamB;
     public Transform parentA, parentB;
     public ItemPlayer prefabItemPlayer;
     private List<ItemPlayer> itemsPlayer;
 
     //Settings
+    public GameObject imageWhistle;
     public Button buttonStartTime;
     public Image buttonPlayersInfo;
     public Sprite[] spritesButtonPlayerInfo;
@@ -51,6 +66,9 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textCalledBy;
     public TextMeshProUGUI textTimeoutTeamA;
     public TextMeshProUGUI textTimeoutTeamB;
+    public TextMeshProUGUI textCalledBySpirit;
+    public TextMeshProUGUI textTimeoutTeamASpirit;
+    public TextMeshProUGUI textTimeoutTeamBSpirit;
 
     //Event
     public TextMeshProUGUI textEventTitle;
@@ -62,13 +80,6 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textPlayerEventPoint;
     public Transform parentPointPlayers;
 
-    private Match match;
-    private bool matchStarted;
-    private bool timeIsRunning;
-    private TimeSpan gameTime;
-    private bool isPoint;
-    private bool isAssist;
-    private int debugCount;
     private void Awake()
     {
         MP = this;
@@ -78,7 +89,26 @@ public class ManagerPlaying : MonoBehaviour
     {
         if (!timeIsRunning) return;
 
+        if (timerExtra)
+        {
+            float s = Mathf.FloorToInt((float)(gameTime - eventExactTime).TotalSeconds);
+            textTimerExtra.text = s.ToString();
+            textTimerExtra.color = TimeToPullColor(s);
+        }
+
         UpdateGameTime();
+
+        if (!warnedHalfTime && gameTime >= match.halfTime)
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("Halftime"));
+            warnedHalfTime = true;
+        }
+
+        if (!warnedFullTime && gameTime >= match.fullTime)
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("Fulltime"));
+            warnedFullTime = true;
+        }
     }
 
     public void StartMatch(Match _m)
@@ -87,7 +117,10 @@ public class ManagerPlaying : MonoBehaviour
         matchStarted = false;
         timeIsRunning = false;
         textTimer.text = "00:00";
+        warnedHalfTime = false;
+        warnedFullTime = false;
         UpdateScore();
+        ButtonTimerExtra();
         UpdateInfo();
         SetTeams();
         buttonStartTime.gameObject.SetActive(true);
@@ -107,6 +140,8 @@ public class ManagerPlaying : MonoBehaviour
         textTeamB.text = match.teamB.myName;
         textTimeoutTeamA.text = match.teamA.myName;
         textTimeoutTeamB.text = match.teamB.myName;
+        textTimeoutTeamASpirit.text = match.teamA.myName;
+        textTimeoutTeamBSpirit.text = match.teamB.myName;
 
         itemsPlayer = new List<ItemPlayer>();
 
@@ -130,6 +165,13 @@ public class ManagerPlaying : MonoBehaviour
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingInfo);
     }
 
+    public void ButtonTimerExtra()
+    {
+        textTimerExtra.text = string.Empty;
+        imageWhistle.SetActive(false);
+        timerExtra = false;
+    }
+
     public void ButtonStartTime()
     {
         if (!matchStarted)
@@ -151,7 +193,25 @@ public class ManagerPlaying : MonoBehaviour
         buttonPlayersInfo.sprite = spritesButtonPlayerInfo[showingNames ? 1 : 0];
 
         foreach (ItemPlayer ip in itemsPlayer)
-            ip.myText.text = showingNames ? ip.GetPlayer().myName : ip.GetPlayer().number.ToString();
+        {
+
+            if (showingNames)
+            {
+                ip.myText.text = ip.GetPlayer().myName;
+                ip.FontSizeName();
+            }
+            else
+            {
+                ip.myText.text = ip.GetPlayer().number.ToString();
+                ip.FontSizeNumber();
+            }
+        }
+    }
+
+    public void ButtonOptions()
+    {
+        possibleEventExactTime = gameTime;
+        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingOptions);
     }
 
     public void ButtonUndo()
@@ -188,6 +248,7 @@ public class ManagerPlaying : MonoBehaviour
                 textEventPlayer.text = PlayerIdentification(match.events.Last().playerMain);
                 break;
             case MatchEventType.TIMEOUT:
+            case MatchEventType.SPIRIT_TIMEOUT:
                 textEventType.text = "Timeout";
                 textEventPlayer.text = match.events.Last().teamA ? match.teamA.myName : match.teamB.myName;
                 break;
@@ -213,18 +274,22 @@ public class ManagerPlaying : MonoBehaviour
 
     public void ButtonConfirmTimeout(bool _teamA)
     {
-        AddMatchTimeout(_teamA);
+        AddMatchTimeout(_teamA, false);
+        eventExactTime = possibleEventExactTime;
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
     }
 
     public void ButtonSpiritTimeout()
     {
-        if (!timeIsRunning)
-        {
+        if (timeIsRunning)
+            ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingSpiritTimeout);
+        else
             ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("TimeNotRunning"));
-            return;
-        }
+    }
 
+    public void ButtonConfirmSpiritTimeout(bool _teamA)
+    {
+        AddMatchTimeout(_teamA, true);
         startStoppage = DateTime.Now;
         timeIsRunning = false;
         UpdateGameTime();
@@ -247,7 +312,11 @@ public class ManagerPlaying : MonoBehaviour
 
     public void ClickedPlayer(ItemPlayer ip)
     {
-        if (!timeIsRunning) return;
+        if (!timeIsRunning)
+        {
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("TimeNotRunning"));
+            return;
+        }
 
         if (isPoint || isAssist)
         {
@@ -269,6 +338,7 @@ public class ManagerPlaying : MonoBehaviour
         }
 
         currentItemPlayer = ip;
+        eventExactTime = gameTime;
         textEventTitle.text = PlayerIdentification(ip.GetPlayer());
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingEvent);
     }
@@ -337,22 +407,26 @@ public class ManagerPlaying : MonoBehaviour
     {
         match.events.Add(new MatchEvent()
         {
-            gameTime = gameTime,
+            gameTime = eventExactTime,
             eventType = met,
             teamA = currentItemPlayer.GetTeamA(),
             playerMain = currentItemPlayer.GetPlayer(),
             playerAssist = assist
         });
 
-        if (met == MatchEventType.POINT || met == MatchEventType.CALLAHAN) UpdateScore();
+        if (met == MatchEventType.POINT || met == MatchEventType.CALLAHAN)
+        {
+            UpdateScore();
+            timerExtra = true;
+        }
     }
 
-    private void AddMatchTimeout(bool _teamA)
+    private void AddMatchTimeout(bool _teamA, bool _spirit)
     {
         match.events.Add(new MatchEvent()
         {
-            gameTime = gameTime,
-            eventType = MatchEventType.TIMEOUT,
+            gameTime = eventExactTime,
+            eventType = _spirit ? MatchEventType.SPIRIT_TIMEOUT : MatchEventType.TIMEOUT,
             teamA = _teamA,
             playerMain = new Player(),
             playerAssist = new Player()
@@ -363,6 +437,19 @@ public class ManagerPlaying : MonoBehaviour
     {
         gameTime = (DateTime.Now - startTime) - stoppedTime;
         textTimer.text = (gameTime.Hours > 0 ? gameTime.Hours.ToString("00") + ":" : string.Empty) + gameTime.Minutes.ToString("00") + ":" + gameTime.Seconds.ToString("00");
+    }
+
+    private Color TimeToPullColor(float _timer)
+    {
+        if (_timer > 2 * timeToPullRed) ButtonTimerExtra();
+        if (_timer > timeToPullRed) return Color.red;
+        if (_timer > timeToPullYellow)
+        {
+            if (!imageWhistle.activeSelf) imageWhistle.SetActive(true);
+            return Color.yellow;
+        }
+        return Color.green;
+
     }
 
     private void UpdateScore()
@@ -389,6 +476,7 @@ public class ManagerPlaying : MonoBehaviour
         textButtonUndo.text = ManagerLanguages.ML.Translate("Undo");
         textButtonTimeout.text = ManagerLanguages.ML.Translate("Timeout");
         textCalledBy.text = ManagerLanguages.ML.Translate("CalledBy");
+        textCalledBySpirit.text = ManagerLanguages.ML.Translate("CalledBy");
         textButtonSpiritTimeout.text = ManagerLanguages.ML.Translate("SpiritTimeout");
         textButtonEnd.text = ManagerLanguages.ML.Translate("End");
         textButtonPoint.text = ManagerLanguages.ML.Translate("Point");

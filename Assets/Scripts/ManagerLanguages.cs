@@ -49,7 +49,7 @@ public class ManagerLanguages : MonoBehaviour
         {"SpiritTimeout", "Timeout de Espírito" },
         {"End", "Terminar" },
         {"NoEventsUndo", "Não há eventos para anular"},
-        {"TimeNotRunning", "O tempo não está a corer"},
+        {"TimeNotRunning", "O tempo não está a correr"},
         {"NoTie", "A partida não pode terminar num empate"},
         {"Point", "Ponto" },
         {"Assistance", "Assistência" },
