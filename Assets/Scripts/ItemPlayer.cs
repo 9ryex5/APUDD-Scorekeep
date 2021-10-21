@@ -8,17 +8,30 @@ public class ItemPlayer : MonoBehaviour
     private Player player;
     private bool teamA;
 
-    public void StartThis(Player p, bool _teamA)
+    public void StartThis(Player p, bool _teamA, bool _showName = false)
     {
         player = p;
-        myText.text = p.number.ToString();
-        FontSizeNumber();
+        SetText(_showName);
         teamA = _teamA;
     }
 
     public void Clicked()
     {
         ManagerPlaying.MP.ClickedPlayer(this);
+    }
+
+    public void SetText(bool _name)
+    {
+        if (_name)
+        {
+            myText.text = player.GetName(true, 0) + "\n" + player.GetName(true, 1);
+            myText.fontSize = 18;
+        }
+        else
+        {
+            myText.text = player.number.ToString();
+            myText.fontSize = 55;
+        }
     }
 
     public bool GetTeamA()
@@ -29,15 +42,5 @@ public class ItemPlayer : MonoBehaviour
     public Player GetPlayer()
     {
         return player;
-    }
-
-    public void FontSizeName()
-    {
-        myText.fontSize = 18;
-    }
-
-    public void FontSizeNumber()
-    {
-        myText.fontSize = 55;
     }
 }

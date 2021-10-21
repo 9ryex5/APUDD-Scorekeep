@@ -33,14 +33,18 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textTeamA, textTeamB;
     public Transform parentA, parentB;
     public ItemPlayer prefabItemPlayer;
-    private List<ItemPlayer> itemsPlayer;
+    private List<ItemPlayer> itemsPlayer, itemsPlayerPoint;
+    public Image genderPullA, genderPullB;
+    public Image genderPullAPrevious, genderPullBPrevious;
+    public Image genderPullANext, genderPullBNext;
+    private bool firstPullFemale;
 
     //Settings
     public GameObject imageWhistle;
     public Button buttonStartTime;
     public Image buttonPlayersInfo;
     public Sprite[] spritesButtonPlayerInfo;
-    private bool showingNames;
+    private bool showingNames, showingNamesPoint;
 
     //Options
     public TextMeshProUGUI textButtonUndo;
@@ -52,6 +56,8 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textInfoTitle;
     public TextMeshProUGUI textLabelHalfTime, textLabelFullTime;
     public TextMeshProUGUI textHalfTime, textFullTime;
+    public TextMeshProUGUI textLabelFirstPullGender;
+    public Image imageFirstPullMale, imageFirstPullFemale;
 
     //Undo
     public TextMeshProUGUI textUndoTitle;
@@ -78,7 +84,13 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textButtonCallahan;
     private ItemPlayer currentItemPlayer;
     public TextMeshProUGUI textPlayerEventPoint;
+    public Image buttonPlayersInfoPoint;
     public Transform parentPointPlayers;
+
+    //Exit
+    public TextMeshProUGUI textExitTitle;
+    public TextMeshProUGUI textSaveMatch;
+    public TextMeshProUGUI textDiscardMatch;
 
     private void Awake()
     {
@@ -106,7 +118,7 @@ public class ManagerPlaying : MonoBehaviour
 
         if (!warnedFullTime && gameTime >= match.fullTime)
         {
-            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("Fulltime"));
+            ManagerUI.MUI.Warning(ManagerLanguages.ML.Translate("TimeOver"));
             warnedFullTime = true;
         }
     }
@@ -120,11 +132,15 @@ public class ManagerPlaying : MonoBehaviour
         warnedHalfTime = false;
         warnedFullTime = false;
         UpdateScore();
+        ButtonFirstGenderPull(firstPullFemale);
         ButtonTimerExtra();
         UpdateInfo();
         SetTeams();
         buttonStartTime.gameObject.SetActive(true);
         buttonPlayersInfo.sprite = spritesButtonPlayerInfo[0];
+        buttonPlayersInfoPoint.sprite = spritesButtonPlayerInfo[0];
+        showingNames = false;
+        showingNamesPoint = false;
         Language();
     }
 
@@ -142,6 +158,12 @@ public class ManagerPlaying : MonoBehaviour
         textTimeoutTeamB.text = match.teamB.myName;
         textTimeoutTeamASpirit.text = match.teamA.myName;
         textTimeoutTeamBSpirit.text = match.teamB.myName;
+        genderPullA.gameObject.SetActive(false);
+        genderPullAPrevious.gameObject.SetActive(false);
+        genderPullANext.gameObject.SetActive(false);
+        genderPullB.gameObject.SetActive(false);
+        genderPullBPrevious.gameObject.SetActive(false);
+        genderPullBNext.gameObject.SetActive(false);
 
         itemsPlayer = new List<ItemPlayer>();
 
@@ -165,11 +187,25 @@ public class ManagerPlaying : MonoBehaviour
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingInfo);
     }
 
+    public void ButtonFirstGenderPull(bool _female)
+    {
+        firstPullFemale = _female;
+        imageFirstPullFemale.color = new Color(imageFirstPullFemale.color.r, imageFirstPullFemale.color.g, imageFirstPullFemale.color.b, _female ? 1 : 0.5f);
+        imageFirstPullMale.color = new Color(imageFirstPullMale.color.r, imageFirstPullMale.color.g, imageFirstPullMale.color.b, _female ? 0.5f : 1);
+    }
+
     public void ButtonTimerExtra()
     {
         textTimerExtra.text = string.Empty;
         imageWhistle.SetActive(false);
         timerExtra = false;
+
+        genderPullA.gameObject.SetActive(false);
+        genderPullAPrevious.gameObject.SetActive(false);
+        genderPullANext.gameObject.SetActive(false);
+        genderPullB.gameObject.SetActive(false);
+        genderPullBPrevious.gameObject.SetActive(false);
+        genderPullBNext.gameObject.SetActive(false);
     }
 
     public void ButtonStartTime()
@@ -193,19 +229,7 @@ public class ManagerPlaying : MonoBehaviour
         buttonPlayersInfo.sprite = spritesButtonPlayerInfo[showingNames ? 1 : 0];
 
         foreach (ItemPlayer ip in itemsPlayer)
-        {
-
-            if (showingNames)
-            {
-                ip.myText.text = ip.GetPlayer().myName;
-                ip.FontSizeName();
-            }
-            else
-            {
-                ip.myText.text = ip.GetPlayer().number.ToString();
-                ip.FontSizeNumber();
-            }
-        }
+            ip.SetText(showingNames);
     }
 
     public void ButtonOptions()
@@ -235,17 +259,17 @@ public class ManagerPlaying : MonoBehaviour
         {
             case MatchEventType.POINT:
                 textEventPointType.text = ManagerLanguages.ML.Translate("Point");
-                textEventPointPlayer.text = PlayerIdentification(match.events.Last().playerMain);
+                textEventPointPlayer.text = match.events.Last().playerMain.Identification();
                 textEventAssistType.text = ManagerLanguages.ML.Translate("Assistance");
-                textEventAssistPlayer.text = PlayerIdentification(match.events.Last().playerAssist);
+                textEventAssistPlayer.text = match.events.Last().playerAssist.Identification();
                 break;
             case MatchEventType.DEFENSE:
                 textEventType.text = ManagerLanguages.ML.Translate("Defense");
-                textEventPlayer.text = PlayerIdentification(match.events.Last().playerMain);
+                textEventPlayer.text = match.events.Last().playerMain.Identification();
                 break;
             case MatchEventType.CALLAHAN:
                 textEventType.text = "Callahan";
-                textEventPlayer.text = PlayerIdentification(match.events.Last().playerMain);
+                textEventPlayer.text = match.events.Last().playerMain.Identification();
                 break;
             case MatchEventType.TIMEOUT:
             case MatchEventType.SPIRIT_TIMEOUT:
@@ -339,7 +363,7 @@ public class ManagerPlaying : MonoBehaviour
 
         currentItemPlayer = ip;
         eventExactTime = gameTime;
-        textEventTitle.text = PlayerIdentification(ip.GetPlayer());
+        textEventTitle.text = ip.GetPlayer().Identification();
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingEvent);
     }
 
@@ -364,13 +388,16 @@ public class ManagerPlaying : MonoBehaviour
         for (int i = 0; i < parentPointPlayers.childCount; i++)
             Destroy(parentPointPlayers.GetChild(i).gameObject);
 
+        itemsPlayerPoint = new List<ItemPlayer>();
+
         if (currentItemPlayer.GetTeamA())
         {
             for (int i = 0; i < match.teamA.players.Count; i++)
             {
                 if (currentItemPlayer.GetPlayer().ID == match.teamA.players[i].ID) continue;
                 ItemPlayer ip = Instantiate(prefabItemPlayer, parentPointPlayers);
-                ip.StartThis(match.teamA.players[i], true);
+                ip.StartThis(match.teamA.players[i], true, showingNamesPoint);
+                itemsPlayerPoint.Add(ip);
             }
         }
         else
@@ -379,9 +406,20 @@ public class ManagerPlaying : MonoBehaviour
             {
                 if (currentItemPlayer.GetPlayer().ID == match.teamB.players[i].ID) continue;
                 ItemPlayer ip = Instantiate(prefabItemPlayer, parentPointPlayers);
-                ip.StartThis(match.teamB.players[i], false);
+                ip.StartThis(match.teamB.players[i], false, showingNamesPoint);
+                itemsPlayerPoint.Add(ip);
             }
         }
+    }
+
+    public void ButtonPlayerInfoPoint()
+    {
+        showingNamesPoint = !showingNamesPoint;
+
+        buttonPlayersInfoPoint.sprite = spritesButtonPlayerInfo[showingNamesPoint ? 1 : 0];
+
+        foreach (ItemPlayer ip in itemsPlayerPoint)
+            ip.SetText(showingNamesPoint);
     }
 
     public void ButtonDefense()
@@ -418,6 +456,41 @@ public class ManagerPlaying : MonoBehaviour
         {
             UpdateScore();
             timerExtra = true;
+
+            if (currentItemPlayer.GetTeamA())
+            {
+                if (match.GetScoreTotal() > 1)
+                {
+                    genderPullAPrevious.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
+                    genderPullAPrevious.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
+                    genderPullAPrevious.color = new Color(genderPullAPrevious.color.r, genderPullAPrevious.color.g, genderPullAPrevious.color.b, 0.5f);
+                    genderPullAPrevious.gameObject.SetActive(true);
+                }
+                genderPullA.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
+                genderPullA.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
+                genderPullA.gameObject.SetActive(true);
+                genderPullANext.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
+                genderPullANext.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
+                genderPullANext.color = new Color(genderPullANext.color.r, genderPullANext.color.g, genderPullANext.color.b, 0.5f);
+                genderPullANext.gameObject.SetActive(true);
+            }
+            else
+            {
+                if (match.GetScoreTotal() > 1)
+                {
+                    genderPullBPrevious.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
+                    genderPullBPrevious.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
+                    genderPullBPrevious.color = new Color(genderPullBPrevious.color.r, genderPullBPrevious.color.g, genderPullBPrevious.color.b, 0.5f);
+                    genderPullBPrevious.gameObject.SetActive(true);
+                }
+                genderPullB.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
+                genderPullB.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
+                genderPullB.gameObject.SetActive(true);
+                genderPullBNext.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
+                genderPullBNext.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
+                genderPullBNext.color = new Color(genderPullBNext.color.r, genderPullBNext.color.g, genderPullBNext.color.b, 0.5f);
+                genderPullBNext.gameObject.SetActive(true);
+            }
         }
     }
 
@@ -449,7 +522,11 @@ public class ManagerPlaying : MonoBehaviour
             return Color.yellow;
         }
         return Color.green;
+    }
 
+    private bool PullGenderFemale(int _point)
+    {
+        return firstPullFemale == Convert.ToBoolean(Mathf.FloorToInt((_point - 1) / 2) % 2);
     }
 
     private void UpdateScore()
@@ -463,16 +540,12 @@ public class ManagerPlaying : MonoBehaviour
         textFullTime.text = match.fullTime.Hours.ToString("00") + ":" + match.fullTime.Minutes.ToString("00") + ":" + match.fullTime.Seconds.ToString("00");
     }
 
-    private string PlayerIdentification(Player p)
-    {
-        return p.number + " - " + p.myName;
-    }
-
     private void Language()
     {
         textInfoTitle.text = ManagerLanguages.ML.Translate("MatchInfo");
         textLabelHalfTime.text = ManagerLanguages.ML.Translate("Halftime");
         textLabelFullTime.text = ManagerLanguages.ML.Translate("Fulltime");
+        textLabelFirstPullGender.text = ManagerLanguages.ML.Translate("FirstPull");
         textButtonUndo.text = ManagerLanguages.ML.Translate("Undo");
         textButtonTimeout.text = ManagerLanguages.ML.Translate("Timeout");
         textCalledBy.text = ManagerLanguages.ML.Translate("CalledBy");
@@ -483,5 +556,8 @@ public class ManagerPlaying : MonoBehaviour
         textButtonAssist.text = ManagerLanguages.ML.Translate("Assistance");
         textButtonDefense.text = ManagerLanguages.ML.Translate("Defense");
         textButtonCallahan.text = ManagerLanguages.ML.Translate("Callahan");
+        textExitTitle.text = ManagerLanguages.ML.Translate("Exit");
+        textSaveMatch.text = ManagerLanguages.ML.Translate("SaveMatch");
+        textDiscardMatch.text = ManagerLanguages.ML.Translate("DiscardMatch");
     }
 }

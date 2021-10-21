@@ -1,3 +1,4 @@
+using UnityEngine;
 using System;
 using System.Collections.Generic;
 
@@ -14,9 +15,23 @@ public struct Team
 public struct Player
 {
     public int ID;
-    public string myName;
+    public string fullName;
     public int number;
     public bool female;
+
+    public string GetName(bool _abreviation, int _index)
+    {
+        string[] fn = fullName.Split(' ');
+        if (_index + 1 > fn.Length) return " ";
+        string n = fn[_index];
+        if (_abreviation && n.Length > 9) return n.Substring(0, 3) + '.';
+        return n;
+    }
+
+    public string Identification()
+    {
+        return number + " " + fullName;
+    }
 }
 
 [Serializable]
@@ -45,6 +60,11 @@ public struct Match
 
         return sum;
     }
+
+    public int GetScoreTotal()
+    {
+        return GetScore(false) + GetScore(true);
+    }
 }
 
 [Serializable]
@@ -55,6 +75,26 @@ public struct MatchEvent
     public bool teamA;
     public Player playerMain;
     public Player playerAssist;
+
+    public string EventTypeString()
+    {
+        switch (eventType)
+        {
+            case MatchEventType.POINT:
+                return ManagerLanguages.ML.Translate("Point");
+            case MatchEventType.DEFENSE:
+                return ManagerLanguages.ML.Translate("Defense");
+            case MatchEventType.CALLAHAN:
+                return ManagerLanguages.ML.Translate("Callahan");
+            case MatchEventType.TIMEOUT:
+                return ManagerLanguages.ML.Translate("Timeout");
+            case MatchEventType.SPIRIT_TIMEOUT:
+                return ManagerLanguages.ML.Translate("SpiritTimeout");
+        }
+
+        Debug.LogWarning("Invalid event type");
+        return string.Empty;
+    }
 }
 
 public enum MatchEventType

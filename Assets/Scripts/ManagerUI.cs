@@ -16,9 +16,13 @@ public class ManagerUI : MonoBehaviour
     public GameObject playingSpiritTimeout;
     public GameObject playingEventPoint;
     public GameObject playingEvent;
+    public GameObject playingExit;
     public GameObject matchProfile;
     public GameObject warning;
     public TextMeshProUGUI textWarning;
+
+    public Sprite[] spritesGenders;
+    public Color[] colorsGenders;
 
     private GameObject currentLayout;
 
