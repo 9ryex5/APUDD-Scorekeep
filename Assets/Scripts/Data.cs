@@ -24,7 +24,7 @@ public struct Player
         string[] fn = fullName.Split(' ');
         if (_index + 1 > fn.Length) return " ";
         string n = fn[_index];
-        if (_abreviation && n.Length > 9) return n.Substring(0, 3) + '.';
+        if (_abreviation && n.Length > 8) return n.Substring(0, 7) + '.';
         return n;
     }
 
@@ -37,6 +37,7 @@ public struct Player
 [Serializable]
 public struct Match
 {
+    public string scoreKeepers;
     public DateTime date;
     public TimeSpan halfTime, fullTime;
     public Team teamA, teamB;
@@ -44,6 +45,7 @@ public struct Match
 
     public Match(DateTime _date, TimeSpan _ht, TimeSpan _ft, Team _a, Team _b)
     {
+        scoreKeepers = string.Empty;
         date = _date;
         halfTime = _ht;
         fullTime = _ft;

@@ -9,7 +9,6 @@ public class ManagerUI : MonoBehaviour
     public GameObject menuPlay;
     public GameObject menuMatches;
     public GameObject playing;
-    public GameObject playingInfo;
     public GameObject playingOptions;
     public GameObject playingUndo;
     public GameObject playingTimeout;

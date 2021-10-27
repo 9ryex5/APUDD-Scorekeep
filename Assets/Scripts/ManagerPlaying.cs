@@ -11,10 +11,7 @@ public class ManagerPlaying : MonoBehaviour
 
     public TextMeshProUGUI textTimer;
     public TextMeshProUGUI textScore;
-    public TextMeshProUGUI textTimerExtra;
 
-    private const int timeToPullYellow = 75;
-    private const int timeToPullRed = 90;
 
     private Match match;
     private bool matchStarted;
@@ -23,8 +20,6 @@ public class ManagerPlaying : MonoBehaviour
     private TimeSpan gameTime;
     private TimeSpan stoppedTime;
     private DateTime startStoppage;
-    private TimeSpan eventExactTime, possibleEventExactTime;
-    private bool timerExtra;
     private bool warnedHalfTime, warnedFullTime;
     private bool isPoint;
     private bool isAssist;
@@ -34,13 +29,30 @@ public class ManagerPlaying : MonoBehaviour
     public Transform parentA, parentB;
     public ItemPlayer prefabItemPlayer;
     private List<ItemPlayer> itemsPlayer, itemsPlayerPoint;
-    public Image genderPullA, genderPullB;
-    public Image genderPullAPrevious, genderPullBPrevious;
-    public Image genderPullANext, genderPullBNext;
+
+    //Pull Info
+    private TimeSpan timeToPull1 = new TimeSpan(0, 0, 75);
+    private TimeSpan timeToPull2 = new TimeSpan(0, 0, 15);
+    public GameObject goPullInfo;
+    public Image genderPullPrevious;
+    public Image genderPullCurrent;
+    public Image genderPullNext;
     private bool firstPullFemale;
+    public TextMeshProUGUI textTimerSincePoint;
+    private bool countingPull;
+    public GameObject[] imagesPullWhistle;
+
+    //Timeout Info
+    private TimeSpan timeToTimeout1 = new TimeSpan(0, 0, 75);
+    private TimeSpan timeToTimeout2 = new TimeSpan(0, 0, 15);
+    public GameObject goTimeoutInfo;
+    public TextMeshProUGUI labelTimeout;
+    public TextMeshProUGUI textTimerSinceTimeout;
+    private bool countingTimeout;
+    public GameObject[] imagesTimeoutWhistle;
+    private bool timeoutBeforePull;
 
     //Settings
-    public GameObject imageWhistle;
     public Button buttonStartTime;
     public Image buttonPlayersInfo;
     public Sprite[] spritesButtonPlayerInfo;
@@ -53,9 +65,11 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textButtonEnd;
 
     //Info
+    public GameObject goInfo;
     public TextMeshProUGUI textInfoTitle;
     public TextMeshProUGUI textLabelHalfTime, textLabelFullTime;
     public TextMeshProUGUI textHalfTime, textFullTime;
+    public TextMeshProUGUI textToHalfTime, textToFullTime;
     public TextMeshProUGUI textLabelFirstPullGender;
     public Image imageFirstPullMale, imageFirstPullFemale;
 
@@ -86,6 +100,9 @@ public class ManagerPlaying : MonoBehaviour
     public TextMeshProUGUI textPlayerEventPoint;
     public Image buttonPlayersInfoPoint;
     public Transform parentPointPlayers;
+    private TimeSpan eventExactTime, possibleEventExactTime;
+    private TimeSpan timeLastPoint;
+    private TimeSpan timeLastTimeout;
 
     //Exit
     public TextMeshProUGUI textExitTitle;
@@ -101,14 +118,33 @@ public class ManagerPlaying : MonoBehaviour
     {
         if (!timeIsRunning) return;
 
-        if (timerExtra)
+        UpdateGameTime();
+
+        if (countingTimeout)
         {
-            float s = Mathf.FloorToInt((float)(gameTime - eventExactTime).TotalSeconds);
-            textTimerExtra.text = s.ToString();
-            textTimerExtra.color = TimeToPullColor(s);
+            float timerTimeout = (float)(timeToTimeout1 - (gameTime - timeLastTimeout)).TotalSeconds;
+            textTimerSinceTimeout.text = Mathf.FloorToInt(timerTimeout).ToString();
+
+            if (timerTimeout < 0 && !imagesTimeoutWhistle[0].activeSelf) imagesTimeoutWhistle[0].SetActive(true);
+            if (timerTimeout < 0 - timeToTimeout2.TotalSeconds && !imagesTimeoutWhistle[1].activeSelf) imagesTimeoutWhistle[1].SetActive(true);
+            if (timerTimeout < 0 - timeToTimeout1.TotalSeconds) ButtonStopCountingTimeout();
         }
 
-        UpdateGameTime();
+        if (countingPull)
+        {
+            float timerPull = (float)(timeToPull1 - (gameTime - timeLastPoint) + (timeoutBeforePull ? timeToTimeout1 : TimeSpan.Zero)).TotalSeconds;
+            textTimerSincePoint.text = Mathf.FloorToInt(timerPull).ToString();
+
+            if (timerPull < 0 && !imagesPullWhistle[0].activeSelf) imagesPullWhistle[0].SetActive(true);
+            if (timerPull < 0 - timeToPull2.TotalSeconds && !imagesPullWhistle[1].activeSelf) imagesPullWhistle[1].SetActive(true);
+            if (timerPull < 0 - timeToPull1.TotalSeconds) ButtonStopCountingPull();
+        }
+
+        if (goInfo.activeSelf)
+        {
+            textToHalfTime.text = (match.halfTime > gameTime ? "-" : "+") + Helpers.TimeSpanToString(match.halfTime - gameTime);
+            textToFullTime.text = (match.fullTime > gameTime ? "-" : "+") + Helpers.TimeSpanToString(match.fullTime - gameTime);
+        }
 
         if (!warnedHalfTime && gameTime >= match.halfTime)
         {
@@ -128,12 +164,12 @@ public class ManagerPlaying : MonoBehaviour
         match = _m;
         matchStarted = false;
         timeIsRunning = false;
-        textTimer.text = "00:00";
+        textTimer.text = "00";
         warnedHalfTime = false;
         warnedFullTime = false;
         UpdateScore();
         ButtonFirstGenderPull(firstPullFemale);
-        ButtonTimerExtra();
+        goPullInfo.SetActive(false);
         UpdateInfo();
         SetTeams();
         buttonStartTime.gameObject.SetActive(true);
@@ -158,12 +194,7 @@ public class ManagerPlaying : MonoBehaviour
         textTimeoutTeamB.text = match.teamB.myName;
         textTimeoutTeamASpirit.text = match.teamA.myName;
         textTimeoutTeamBSpirit.text = match.teamB.myName;
-        genderPullA.gameObject.SetActive(false);
-        genderPullAPrevious.gameObject.SetActive(false);
-        genderPullANext.gameObject.SetActive(false);
-        genderPullB.gameObject.SetActive(false);
-        genderPullBPrevious.gameObject.SetActive(false);
-        genderPullBNext.gameObject.SetActive(false);
+        goPullInfo.SetActive(false);
 
         itemsPlayer = new List<ItemPlayer>();
 
@@ -182,30 +213,11 @@ public class ManagerPlaying : MonoBehaviour
         }
     }
 
-    public void ButtonInfo()
-    {
-        ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingInfo);
-    }
-
     public void ButtonFirstGenderPull(bool _female)
     {
         firstPullFemale = _female;
         imageFirstPullFemale.color = new Color(imageFirstPullFemale.color.r, imageFirstPullFemale.color.g, imageFirstPullFemale.color.b, _female ? 1 : 0.5f);
         imageFirstPullMale.color = new Color(imageFirstPullMale.color.r, imageFirstPullMale.color.g, imageFirstPullMale.color.b, _female ? 0.5f : 1);
-    }
-
-    public void ButtonTimerExtra()
-    {
-        textTimerExtra.text = string.Empty;
-        imageWhistle.SetActive(false);
-        timerExtra = false;
-
-        genderPullA.gameObject.SetActive(false);
-        genderPullAPrevious.gameObject.SetActive(false);
-        genderPullANext.gameObject.SetActive(false);
-        genderPullB.gameObject.SetActive(false);
-        genderPullBPrevious.gameObject.SetActive(false);
-        genderPullBNext.gameObject.SetActive(false);
     }
 
     public void ButtonStartTime()
@@ -220,6 +232,19 @@ public class ManagerPlaying : MonoBehaviour
 
         timeIsRunning = true;
         buttonStartTime.gameObject.SetActive(false);
+    }
+
+    public void ButtonStopCountingTimeout()
+    {
+        countingTimeout = false;
+        goTimeoutInfo.SetActive(false);
+    }
+
+    public void ButtonStopCountingPull()
+    {
+        countingPull = false;
+        goPullInfo.SetActive(false);
+        timeoutBeforePull = false;
     }
 
     public void ButtonPlayerInfo()
@@ -298,8 +323,8 @@ public class ManagerPlaying : MonoBehaviour
 
     public void ButtonConfirmTimeout(bool _teamA)
     {
-        AddMatchTimeout(_teamA, false);
         eventExactTime = possibleEventExactTime;
+        AddMatchTimeout(_teamA, false);
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playing);
     }
 
@@ -344,6 +369,8 @@ public class ManagerPlaying : MonoBehaviour
 
         if (isPoint || isAssist)
         {
+
+            eventExactTime = gameTime;
             if (isAssist)
             {
                 ItemPlayer assist = currentItemPlayer;
@@ -362,7 +389,6 @@ public class ManagerPlaying : MonoBehaviour
         }
 
         currentItemPlayer = ip;
-        eventExactTime = gameTime;
         textEventTitle.text = ip.GetPlayer().Identification();
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.playingEvent);
     }
@@ -455,42 +481,33 @@ public class ManagerPlaying : MonoBehaviour
         if (met == MatchEventType.POINT || met == MatchEventType.CALLAHAN)
         {
             UpdateScore();
-            timerExtra = true;
+            countingPull = true;
+            timeLastPoint = eventExactTime;
 
-            if (currentItemPlayer.GetTeamA())
+            genderPullPrevious.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
+            genderPullPrevious.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
+            genderPullPrevious.color = new Color(genderPullPrevious.color.r, genderPullPrevious.color.g, genderPullPrevious.color.b, 0.5f);
+            genderPullCurrent.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
+            genderPullCurrent.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
+            genderPullNext.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
+            genderPullNext.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
+            genderPullNext.color = new Color(genderPullNext.color.r, genderPullNext.color.g, genderPullNext.color.b, 0.5f);
+
+            RectTransform rt = goPullInfo.GetComponent<RectTransform>();
+
+            if (match.events.Last().teamA)
             {
-                if (match.GetScoreTotal() > 1)
-                {
-                    genderPullAPrevious.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
-                    genderPullAPrevious.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
-                    genderPullAPrevious.color = new Color(genderPullAPrevious.color.r, genderPullAPrevious.color.g, genderPullAPrevious.color.b, 0.5f);
-                    genderPullAPrevious.gameObject.SetActive(true);
-                }
-                genderPullA.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
-                genderPullA.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
-                genderPullA.gameObject.SetActive(true);
-                genderPullANext.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
-                genderPullANext.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
-                genderPullANext.color = new Color(genderPullANext.color.r, genderPullANext.color.g, genderPullANext.color.b, 0.5f);
-                genderPullANext.gameObject.SetActive(true);
+                rt.anchorMin = new Vector2(0.1f, rt.anchorMin.y);
+                rt.anchorMax = new Vector2(0.35f, rt.anchorMax.y);
             }
             else
             {
-                if (match.GetScoreTotal() > 1)
-                {
-                    genderPullBPrevious.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
-                    genderPullBPrevious.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() - 1))];
-                    genderPullBPrevious.color = new Color(genderPullBPrevious.color.r, genderPullBPrevious.color.g, genderPullBPrevious.color.b, 0.5f);
-                    genderPullBPrevious.gameObject.SetActive(true);
-                }
-                genderPullB.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
-                genderPullB.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal()))];
-                genderPullB.gameObject.SetActive(true);
-                genderPullBNext.sprite = ManagerUI.MUI.spritesGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
-                genderPullBNext.color = ManagerUI.MUI.colorsGenders[Convert.ToInt32(PullGenderFemale(match.GetScoreTotal() + 1))];
-                genderPullBNext.color = new Color(genderPullBNext.color.r, genderPullBNext.color.g, genderPullBNext.color.b, 0.5f);
-                genderPullBNext.gameObject.SetActive(true);
+                rt.anchorMin = new Vector2(0.65f, rt.anchorMin.y);
+                rt.anchorMax = new Vector2(0.9f, rt.anchorMax.y);
             }
+
+            rt.anchoredPosition = Vector2.zero;
+            goPullInfo.SetActive(true);
         }
     }
 
@@ -504,28 +521,22 @@ public class ManagerPlaying : MonoBehaviour
             playerMain = new Player(),
             playerAssist = new Player()
         });
+
+        countingTimeout = true;
+        timeLastTimeout = eventExactTime;
+        goTimeoutInfo.SetActive(true);
+        if (countingPull) timeoutBeforePull = true;
     }
 
     private void UpdateGameTime()
     {
         gameTime = (DateTime.Now - startTime) - stoppedTime;
-        textTimer.text = (gameTime.Hours > 0 ? gameTime.Hours.ToString("00") + ":" : string.Empty) + gameTime.Minutes.ToString("00") + ":" + gameTime.Seconds.ToString("00");
-    }
-
-    private Color TimeToPullColor(float _timer)
-    {
-        if (_timer > 2 * timeToPullRed) ButtonTimerExtra();
-        if (_timer > timeToPullRed) return Color.red;
-        if (_timer > timeToPullYellow)
-        {
-            if (!imageWhistle.activeSelf) imageWhistle.SetActive(true);
-            return Color.yellow;
-        }
-        return Color.green;
+        textTimer.text = Helpers.TimeSpanToString(gameTime);
     }
 
     private bool PullGenderFemale(int _point)
     {
+        if (_point == 0) return firstPullFemale;
         return firstPullFemale == Convert.ToBoolean(Mathf.FloorToInt((_point - 1) / 2) % 2);
     }
 
@@ -536,8 +547,8 @@ public class ManagerPlaying : MonoBehaviour
 
     private void UpdateInfo()
     {
-        textHalfTime.text = match.halfTime.Hours.ToString("00") + ":" + match.halfTime.Minutes.ToString("00") + ":" + match.halfTime.Seconds.ToString("00");
-        textFullTime.text = match.fullTime.Hours.ToString("00") + ":" + match.fullTime.Minutes.ToString("00") + ":" + match.fullTime.Seconds.ToString("00");
+        textHalfTime.text = Helpers.TimeSpanToString(match.halfTime);
+        textFullTime.text = Helpers.TimeSpanToString(match.fullTime);
     }
 
     private void Language()
@@ -546,6 +557,7 @@ public class ManagerPlaying : MonoBehaviour
         textLabelHalfTime.text = ManagerLanguages.ML.Translate("Halftime");
         textLabelFullTime.text = ManagerLanguages.ML.Translate("Fulltime");
         textLabelFirstPullGender.text = ManagerLanguages.ML.Translate("FirstPull");
+        labelTimeout.text = ManagerLanguages.ML.Translate("Timeout");
         textButtonUndo.text = ManagerLanguages.ML.Translate("Undo");
         textButtonTimeout.text = ManagerLanguages.ML.Translate("Timeout");
         textCalledBy.text = ManagerLanguages.ML.Translate("CalledBy");
@@ -560,4 +572,5 @@ public class ManagerPlaying : MonoBehaviour
         textSaveMatch.text = ManagerLanguages.ML.Translate("SaveMatch");
         textDiscardMatch.text = ManagerLanguages.ML.Translate("DiscardMatch");
     }
+
 }

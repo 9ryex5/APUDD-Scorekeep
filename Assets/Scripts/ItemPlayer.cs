@@ -25,12 +25,12 @@ public class ItemPlayer : MonoBehaviour
         if (_name)
         {
             myText.text = player.GetName(true, 0) + "\n" + player.GetName(true, 1);
-            myText.fontSize = 18;
+            myText.fontSize = Screen.height * 0.0225f;
         }
         else
         {
             myText.text = player.number.ToString();
-            myText.fontSize = 55;
+            myText.fontSize = Screen.height * 0.06875f;
         }
     }
 

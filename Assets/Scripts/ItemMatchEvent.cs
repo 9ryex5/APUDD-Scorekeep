@@ -13,9 +13,16 @@ public class ItemMatchEvent : MonoBehaviour
     public void StartThis(MatchEvent _me)
     {
         matchEvent = _me;
-        textGameTime.text = (matchEvent.gameTime.Hours > 0 ? matchEvent.gameTime.Hours.ToString("00") + ":" : string.Empty) + matchEvent.gameTime.Minutes.ToString("00") + ":" + matchEvent.gameTime.Seconds.ToString("00");
+        textGameTime.text = Helpers.TimeSpanToString(_me.gameTime);
         textEventType.text = matchEvent.EventTypeString();
-        textPlayerMain.text = matchEvent.playerMain.Identification();
-        textPlayerAsist.text = matchEvent.eventType == MatchEventType.POINT ? "(" + matchEvent.playerAssist.Identification() + ")" : string.Empty;
+        if (matchEvent.eventType == MatchEventType.TIMEOUT || matchEvent.eventType == MatchEventType.SPIRIT_TIMEOUT)
+        {
+            //TODO team names
+        }
+        else
+        {
+            textPlayerMain.text = matchEvent.playerMain.Identification();
+            textPlayerAsist.text = matchEvent.eventType == MatchEventType.POINT ? "(" + matchEvent.playerAssist.Identification() + ")" : string.Empty;
+        }
     }
 }
