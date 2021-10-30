@@ -164,7 +164,7 @@ public class ManagerPlaying : MonoBehaviour
         match = _m;
         matchStarted = false;
         timeIsRunning = false;
-        textTimer.text = "00";
+        textTimer.text = Helpers.TimeSpanToString(TimeSpan.Zero, true);
         warnedHalfTime = false;
         warnedFullTime = false;
         UpdateScore();
@@ -201,14 +201,14 @@ public class ManagerPlaying : MonoBehaviour
         for (int i = 0; i < match.teamA.players.Count; i++)
         {
             ItemPlayer ip = Instantiate(prefabItemPlayer, parentA);
-            ip.StartThis(match.teamA.players[i], true);
+            ip.StartThis(match.teamA.players[i], true, true);
             itemsPlayer.Add(ip);
         }
 
         for (int i = 0; i < match.teamB.players.Count; i++)
         {
             ItemPlayer ip = Instantiate(prefabItemPlayer, parentB);
-            ip.StartThis(match.teamB.players[i], false);
+            ip.StartThis(match.teamB.players[i], false, true);
             itemsPlayer.Add(ip);
         }
     }
@@ -355,7 +355,7 @@ public class ManagerPlaying : MonoBehaviour
             return;
         }
 
-        SaveData.SD.SaveMatch(match);
+        SaveData.SD.AddMatch(match);
         ManagerUI.MUI.OpenLayout(ManagerUI.MUI.menuPlay);
     }
 
@@ -531,7 +531,7 @@ public class ManagerPlaying : MonoBehaviour
     private void UpdateGameTime()
     {
         gameTime = (DateTime.Now - startTime) - stoppedTime;
-        textTimer.text = Helpers.TimeSpanToString(gameTime);
+        textTimer.text = Helpers.TimeSpanToString(gameTime, true);
     }
 
     private bool PullGenderFemale(int _point)

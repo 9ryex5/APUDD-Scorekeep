@@ -3,7 +3,6 @@ using TMPro;
 
 public class UIResizer : MonoBehaviour
 {
-
     private RectTransform myRectT;
     private TextMeshProUGUI myText;
 

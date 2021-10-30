@@ -17,11 +17,14 @@ public class ManagerUI : MonoBehaviour
     public GameObject playingEvent;
     public GameObject playingExit;
     public GameObject matchProfile;
+    public GameObject matchEvent;
+    public GameObject matchEventEdit;
     public GameObject warning;
     public TextMeshProUGUI textWarning;
 
     public Sprite[] spritesGenders;
     public Color[] colorsGenders;
+    public Color[] colorsRightWrong;
 
     private GameObject currentLayout;
 

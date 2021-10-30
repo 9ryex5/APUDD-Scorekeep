@@ -7,17 +7,22 @@ public class ItemPlayer : MonoBehaviour
 
     private Player player;
     private bool teamA;
+    private bool playing;
 
-    public void StartThis(Player p, bool _teamA, bool _showName = false)
+    public void StartThis(Player p, bool _teamA, bool _playing, bool _showName = false)
     {
         player = p;
         SetText(_showName);
         teamA = _teamA;
+        playing = _playing;
     }
 
     public void Clicked()
     {
-        ManagerPlaying.MP.ClickedPlayer(this);
+        if (playing)
+            ManagerPlaying.MP.ClickedPlayer(this);
+        else
+            MenuMatches.MM.ClickedPlayer(this);
     }
 
     public void SetText(bool _name)

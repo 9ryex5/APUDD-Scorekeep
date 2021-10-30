@@ -4,25 +4,41 @@ using TMPro;
 public class ItemMatchEvent : MonoBehaviour
 {
     public TextMeshProUGUI textGameTime;
+    public TextMeshProUGUI textScore;
     public TextMeshProUGUI textEventType;
-    public TextMeshProUGUI textPlayerMain;
-    public TextMeshProUGUI textPlayerAsist;
+    public TextMeshProUGUI textMain;
+    public TextMeshProUGUI textPoint;
+    public TextMeshProUGUI textAssist;
 
-    private MatchEvent matchEvent;
+    private int matchEventIndex;
 
-    public void StartThis(MatchEvent _me)
+    public void StartThis(int _matchIndex, int _matchEventIndex, int _scoreA, int _scoreB)
     {
-        matchEvent = _me;
-        textGameTime.text = Helpers.TimeSpanToString(_me.gameTime);
-        textEventType.text = matchEvent.EventTypeString();
-        if (matchEvent.eventType == MatchEventType.TIMEOUT || matchEvent.eventType == MatchEventType.SPIRIT_TIMEOUT)
+        MatchEvent me = SaveData.SD.matches[_matchIndex].events[_matchEventIndex];
+        matchEventIndex = _matchEventIndex;
+        textGameTime.text = Helpers.TimeSpanToString(me.gameTime, true);
+        textScore.text = _scoreA + "-" + _scoreB;
+        textEventType.text = me.EventTypeString();
+
+        switch (me.eventType)
         {
-            //TODO team names
+            case MatchEventType.POINT:
+                textPoint.text = me.playerMain.Identification();
+                textAssist.text = me.eventType == MatchEventType.POINT ? "(" + me.playerAssist.Identification() + ")" : string.Empty;
+                break;
+            case MatchEventType.DEFENSE:
+            case MatchEventType.CALLAHAN:
+                textMain.text = me.playerMain.Identification();
+                break;
+            case MatchEventType.TIMEOUT:
+            case MatchEventType.SPIRIT_TIMEOUT:
+                textMain.text = me.teamA ? SaveData.SD.matches[_matchIndex].teamA.myName : SaveData.SD.matches[_matchIndex].teamB.myName;
+                break;
         }
-        else
-        {
-            textPlayerMain.text = matchEvent.playerMain.Identification();
-            textPlayerAsist.text = matchEvent.eventType == MatchEventType.POINT ? "(" + matchEvent.playerAssist.Identification() + ")" : string.Empty;
-        }
+    }
+
+    public void Clicked()
+    {
+        MenuMatches.MM.OpenMatchEvent(matchEventIndex);
     }
 }

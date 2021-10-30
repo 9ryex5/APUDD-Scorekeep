@@ -35,13 +35,14 @@ public struct Player
 }
 
 [Serializable]
-public struct Match
+public class Match
 {
     public string scoreKeepers;
     public DateTime date;
     public TimeSpan halfTime, fullTime;
     public Team teamA, teamB;
     public List<MatchEvent> events;
+    public int[] spiritA, spiritB;
 
     public Match(DateTime _date, TimeSpan _ht, TimeSpan _ft, Team _a, Team _b)
     {
@@ -52,12 +53,14 @@ public struct Match
         teamA = _a;
         teamB = _b;
         events = new List<MatchEvent>();
+        spiritA = new int[5];
+        spiritB = new int[5];
     }
 
-    public int GetScore(bool _teamA)
+    public int GetScore(bool _teamA, int _atIndex = -1)
     {
         int sum = 0;
-        for (int i = 0; i < events.Count; i++)
+        for (int i = 0; i < (_atIndex == -1 ? events.Count : _atIndex + 1); i++)
             if ((events[i].eventType == MatchEventType.POINT || events[i].eventType == MatchEventType.CALLAHAN) && events[i].teamA == _teamA) sum++;
 
         return sum;
@@ -67,10 +70,20 @@ public struct Match
     {
         return GetScore(false) + GetScore(true);
     }
+
+    public int GetTotalSpirit(bool _teamA)
+    {
+        int sum = 0;
+
+        for (int i = 0; i < spiritA.Length; i++)
+            sum += _teamA ? spiritA[i] : spiritB[i];
+
+        return sum;
+    }
 }
 
 [Serializable]
-public struct MatchEvent
+public class MatchEvent
 {
     public TimeSpan gameTime;
     public MatchEventType eventType;

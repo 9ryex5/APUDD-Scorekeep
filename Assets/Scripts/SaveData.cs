@@ -20,7 +20,7 @@ public class SaveData : MonoBehaviour
         LoadSettings();
     }
 
-    public void SaveMatch(Match _m)
+    public void AddMatch(Match _m)
     {
         matches.Add(_m);
         SaveMatches();

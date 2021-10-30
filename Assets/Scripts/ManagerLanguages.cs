@@ -35,7 +35,11 @@ public class ManagerLanguages : MonoBehaviour
         {"Defense", "Defense" },
         {"Callahan", "Callahan"},
         {"WhoPoint", "Who Scored?" },
-        {"WhoAssist", "Who Assisted?" }
+        {"WhoAssist", "Who Assisted?" },
+        {"Confirm", "Confirm"},
+        {"Cancel", "Cancel"},
+        {"DeleteEvent", "Delete Event?"},
+        {"ChangePlayer", "Change Player"}
     };
 
     private Dictionary<string, string> PT = new Dictionary<string, string>
@@ -66,7 +70,11 @@ public class ManagerLanguages : MonoBehaviour
         {"Defense", "Defesa" },
         {"Callahan", "Callahan"},
         {"WhoPoint", "Quem Pontuou?" },
-        {"WhoAssist", "Quem Assistiu?" }
+        {"WhoAssist", "Quem Assistiu?" },
+        {"Confirm", "Confirmar"},
+        {"Cancel", "Cancelar"},
+        {"DeleteEvent", "Apagar Evento?"},
+        {"ChangePlayer", "Alterar Jogador"}
     };
 
     private void Awake()

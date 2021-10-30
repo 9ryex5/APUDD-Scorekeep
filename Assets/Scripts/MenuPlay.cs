@@ -20,7 +20,6 @@ public class MenuPlay : MonoBehaviour
         textTeamA.text = string.Empty;
         textTeamB.text = string.Empty;
         textX.text = string.Empty;
-        match = new Match();
         Language();
     }
 
@@ -29,8 +28,8 @@ public class MenuPlay : MonoBehaviour
         Ultiorganizer ult = new Ultiorganizer();
         match = ult.ImportMatch();
 
-        textDay.text = match.date.Year + "/" + match.date.Month + "/" + match.date.Day;
-        textHour.text = match.date.Hour.ToString("00") + ":" + match.date.Minute.ToString("00");
+        textDay.text = Helpers.DateTimeToString(match.date, true);
+        textHour.text = Helpers.DateTimeToString(match.date, false);
         textTeamA.text = match.teamA.myName;
         textTeamB.text = match.teamB.myName;
         textX.text = "|";

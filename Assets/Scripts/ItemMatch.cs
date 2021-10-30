@@ -4,21 +4,25 @@ using TMPro;
 public class ItemMatch : MonoBehaviour
 {
     public TextMeshProUGUI textDate;
+    public TextMeshProUGUI textTime;
     public TextMeshProUGUI textScore;
-    public TextMeshProUGUI textTeams;
+    public TextMeshProUGUI textTeamA, textTeamB;
 
-    private Match match;
+    private int matchIndex;
 
-    public void StartThis(Match _m)
+    public void StartThis(int _matchIndex)
     {
-        match = _m;
-        textDate.text = match.date.Year + "/" + match.date.Month + "/" + match.date.Day;
-        textScore.text = match.GetScore(true) + " - " + match.GetScore(false);
-        textTeams.text = match.teamA.myName + " | " + match.teamB.myName;
+        Match m = SaveData.SD.matches[_matchIndex];
+        matchIndex = _matchIndex;
+        textDate.text = Helpers.DateTimeToString(m.date, true);
+        textTime.text = Helpers.DateTimeToString(m.date, false, false);
+        textTeamA.text = m.teamA.myName;
+        textTeamB.text = m.teamB.myName;
+        textScore.text = m.GetScore(true) + " - " + m.GetScore(false);
     }
 
     public void Clicked()
     {
-        MenuMatches.MM.OpenMatch(match);
+        MenuMatches.MM.OpenMatch(matchIndex);
     }
 }
